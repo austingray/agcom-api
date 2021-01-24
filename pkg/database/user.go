@@ -1,5 +1,1 @@
 package database
-
-func Insert() {
-
-}

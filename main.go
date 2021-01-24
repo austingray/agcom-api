@@ -1,9 +1,7 @@
 package main
 
-import (
-	"github.com/austingray/agcom-api/pkg/engine"
-)
+import "github.com/austingray/agcom-api/pkg/server"
 
 func main() {
-	engine.Start()
+	server.Start()
 }
