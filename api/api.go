@@ -2,12 +2,12 @@ package api
 
 import (
 	"github.com/austingray/agcom-api/api/v1/user"
-	"github.com/austingray/agcom-api/pkg/server"
+	"github.com/gin-gonic/gin"
 )
 
 // RegisterRoutes registers all API routes to the server in a single spot
-func RegisterRoutes(s server.Server) {
-	group := s.Engine.Group("/api/v1")
+func RegisterRoutes(e *gin.Engine) {
+	group := e.Group("/api/v1")
 
 	// user
 	{
