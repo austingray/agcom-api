@@ -8,7 +8,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type formData struct {
+// FormData for user POST requests
+type FormData struct {
 	Email    string `form:"email" binding:"required"`
 	Password string `form:"password" binding:"required"`
 }
@@ -29,12 +30,9 @@ func Register(c *gin.Context) {
 	}
 
 	hashed := string(p)
+	log.Println(hashed)
 
-	// TODO: create user in database
-
-	log.Println(email + " : " + hashed)
-
-	c.JSON(http.StatusOK, gin.H{"response": c.PostForm("stuff")})
+	c.JSON(http.StatusOK, gin.H{"email": email})
 }
 
 // Login POST handler

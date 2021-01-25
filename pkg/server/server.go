@@ -4,7 +4,7 @@ import (
 	"github.com/austingray/agcom-api/api"
 	"github.com/austingray/agcom-api/pkg/database"
 	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 // Server engine and database

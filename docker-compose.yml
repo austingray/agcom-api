@@ -4,9 +4,17 @@ services:
     build: .
     ports:
       - "8080:8080"
+    env_file: .env
+    depends_on:
+      - postgres
+    volumes:
+      - ./:/app
+    command: bash -c 'while !</dev/tcp/postgres/5432; do sleep 1; done; go run main.go'
   postgres:
     image: "postgres"
-    environment:
-      POSTGRES_USER: "docker"
-      POSTGRES_PASSWORD: "docker"
-      POSTGRES_DB: "docker"
+    env_file:
+      - .env
+    volumes:
+      - data:/var/lib/postgresql/data
+volumes:
+  data:
