@@ -7,12 +7,20 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/austingray/agcom-api/pkg/database"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
 
 func setupRouter() *gin.Engine {
 	r := gin.Default()
+
+	d := database.Default()
+	r.Use(func(c *gin.Context) {
+		c.Set("d", d)
+		c.Next()
+	})
+
 	r.POST("/api/v1/user/register", Register)
 	return r
 }
@@ -29,7 +37,7 @@ func TestRegister(t *testing.T) {
 
 	// prepare
 	data := url.Values{}
-	data.Set("email", "test@email.com")
+	data.Set("email", "test")
 	data.Add("password", "test-pass-1234")
 
 	// serve

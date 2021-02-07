@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/austingray/agcom-api/pkg/database"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -30,9 +31,11 @@ func Register(c *gin.Context) {
 	}
 
 	hashed := string(p)
-	log.Println(hashed)
 
-	c.JSON(http.StatusOK, gin.H{"email": email})
+	d := c.MustGet("d").(*database.Database)
+	success := d.CreateUser(email, hashed)
+
+	c.JSON(http.StatusOK, gin.H{"email": email, "success": success})
 }
 
 // Login POST handler

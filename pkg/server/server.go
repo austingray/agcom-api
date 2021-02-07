@@ -4,21 +4,25 @@ import (
 	"github.com/austingray/agcom-api/api"
 	"github.com/austingray/agcom-api/pkg/database"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 // Server engine and database
 type Server struct {
-	DB     *gorm.DB
-	Engine *gin.Engine
+	Database *database.Database
+	Engine   *gin.Engine
 }
 
 var server = Server{}
 
-// Start starts the engine.
+// Start starts the server.
 func Start() {
 	server.Engine = gin.Default()
-	server.DB = database.Default()
+	server.Database = database.Default()
+
+	server.Engine.Use(func(c *gin.Context) {
+		c.Set("d", server.Database)
+		c.Next()
+	})
 
 	api.RegisterRoutes(server.Engine)
 

@@ -5,12 +5,21 @@ import (
 	"log"
 	"os"
 
+	"github.com/go-playground/validator/v10"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-// Default returns a default postgres connection using GORM.
-func Default() *gorm.DB {
+// Database struct for associating methods with gorm.DB
+type Database struct {
+	db *gorm.DB
+}
+
+// use a single instance of Validate, it caches struct info
+var validate *validator.Validate
+
+// Default returns a default Database object with a gorm db instance
+func Default() *Database {
 	hostname := os.Getenv("POSTGRES_HOST")
 	port := os.Getenv("POSTGRES_PORT")
 	username := os.Getenv("POSTGRES_USER")
@@ -26,5 +35,14 @@ func Default() *gorm.DB {
 		fmt.Println("Database connection successful.")
 	}
 
-	return db
+	var d = &Database{}
+	d.db = db
+
+	// migrations
+	d.db.AutoMigrate(&User{})
+
+	// init validator
+	validate = validator.New()
+
+	return d
 }
