@@ -1,12 +1,10 @@
 package user
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/austingray/agcom-api/pkg/database"
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/bcrypt"
 )
 
 // FormData for user POST requests
@@ -20,22 +18,15 @@ func Register(c *gin.Context) {
 	email := c.PostForm("email")
 	password := c.PostForm("password")
 
-	// password to bytes
-	b := []byte(password)
+	d := c.MustGet("d").(*database.Database)
+	user, err := d.CreateUser(email, password)
 
-	// bcrypt
-	p, err := bcrypt.GenerateFromPassword(b, bcrypt.MinCost)
 	if err != nil {
-		// TODO: handle password error
-		log.Println(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
-	hashed := string(p)
-
-	d := c.MustGet("d").(*database.Database)
-	success := d.CreateUser(email, hashed)
-
-	c.JSON(http.StatusOK, gin.H{"email": email, "success": success})
+	c.JSON(http.StatusOK, gin.H{"user": user})
 }
 
 // Login POST handler

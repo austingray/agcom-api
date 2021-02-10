@@ -1,6 +1,9 @@
 package database
 
 import (
+	"log"
+
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -10,27 +13,39 @@ type User struct {
 	Email          string `json:"email" validate:"required,email"`
 	EmailValidated bool
 	Handle         string
-	Password       string `json:"password"`
 	Hashed         string
 }
 
 // CreateUser handles creation of user in database
-func (d *Database) CreateUser(email, hash string) bool {
-	user := User{Email: email, Hashed: hash}
+func (d *Database) CreateUser(email, password string) (User, error) {
+	// password to bytes
+	b := []byte(password)
+
+	// bcrypt
+	p, err := bcrypt.GenerateFromPassword(b, bcrypt.MinCost)
+	if err != nil {
+		// TODO: handle password error
+		log.Println(err)
+	}
+
+	// create user object
+	user := User{Email: email, Hashed: string(p)}
 
 	// validation
-	err := validate.Struct(user)
+	err = validate.Struct(user)
 	if err != nil {
 		// TODO: error logging/handling
-		return false
+		log.Println("Error: User struct did not validate.")
+		return user, err
 	}
 
 	// create the user
 	if dbc := d.db.Create(&user); dbc.Error != nil {
 		// TODO: error logging/handling
-		return false
+		log.Println("Error: Could not create user in db.")
+		return user, err
 	}
 
 	// success
-	return true
+	return user, err
 }

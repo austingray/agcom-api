@@ -1,6 +1,7 @@
 package user
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -25,27 +26,45 @@ func setupRouter() *gin.Engine {
 	return r
 }
 
-func TestRouter(t *testing.T) {
+func decodeJSONString(s string) map[string]interface{} {
+	byt := []byte(s)
+	var dat map[string]interface{}
+	if err := json.Unmarshal(byt, &dat); err != nil {
+		panic(err)
+	}
+
+	return dat
+}
+
+func TestSetupRouter(t *testing.T) {
 	router := setupRouter()
 	assert.NotEqual(t, router, nil)
 }
 
-func TestRegister(t *testing.T) {
-	// setup
-	router := setupRouter()
+func doMockHTTPRequest(data url.Values) *httptest.ResponseRecorder {
 	w := httptest.NewRecorder()
-
-	// prepare
-	data := url.Values{}
-	data.Set("email", "test")
-	data.Add("password", "test-pass-1234")
-
-	// serve
+	router := setupRouter()
 	req, _ := http.NewRequest("POST", "/api/v1/user/register", strings.NewReader(data.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
 	router.ServeHTTP(w, req)
+	return w
+}
 
-	// test
-	assert.Equal(t, 200, w.Code)
-	assert.Equal(t, "{\"email\":\"test@email.com\"}", w.Body.String())
+func TestRegister(t *testing.T) {
+	t.Run("bad request if invalid email", func(t *testing.T) {
+		data := url.Values{}
+		data.Set("email", "test@invalid-email")
+		w := doMockHTTPRequest(data)
+		assert.Equal(t, 400, w.Code)
+		body := decodeJSONString(w.Body.String())
+		assert.Equal(t, body["error"], "Key: 'User.Email' Error:Field validation for 'Email' failed on the 'email' tag")
+	})
+
+	t.Run("ok with valid email and password", func(t *testing.T) {
+		data := url.Values{}
+		data.Set("email", "test@valid-email.com")
+		data.Add("password", "test-pass-1234")
+		w := doMockHTTPRequest(data)
+		assert.Equal(t, 200, w.Code)
+	})
 }
