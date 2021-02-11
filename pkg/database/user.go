@@ -49,3 +49,10 @@ func (d *Database) CreateUser(email, password string) (User, error) {
 	// success
 	return user, err
 }
+
+// GetUserByEmail d.db.Where("email = ?", email).First(&user)
+func (d *Database) GetUserByEmail(email string) User {
+	var user User
+	d.db.Where("email = ?", email).First(&user)
+	return user
+}

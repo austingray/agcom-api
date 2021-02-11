@@ -1,7 +1,11 @@
 # agcom-api
 
-The backend API for austingray.com
+My API
 
 # dev
 
 `docker-compose up`
+
+# testing
+
+`./bin/test.sh`

@@ -18,12 +18,26 @@ type Database struct {
 // use a single instance of Validate, it caches struct info
 var validate *validator.Validate
 
-// Default returns a default Database object with a gorm db instance
+// Default returns a default Database object with a connection to the dev database
 func Default() *Database {
+	database := os.Getenv("POSTGRES_DB")
+	db := connect(database)
+	d := postConnect(db)
+	return d
+}
+
+// Test returns a test Database object with a connection to the test database
+func Test() *Database {
+	database := "test"
+	db := connect(database)
+	d := postConnect(db)
+	return d
+}
+
+func connect(database string) *gorm.DB {
 	hostname := os.Getenv("POSTGRES_HOST")
 	port := os.Getenv("POSTGRES_PORT")
 	username := os.Getenv("POSTGRES_USER")
-	database := os.Getenv("POSTGRES_DB")
 	password := os.Getenv("POSTGRES_PASS")
 
 	dsn := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable password=%s", hostname, port, username, database, password)
@@ -35,6 +49,10 @@ func Default() *Database {
 		fmt.Println("Database connection successful.")
 	}
 
+	return db
+}
+
+func postConnect(db *gorm.DB) *Database {
 	var d = &Database{}
 	d.db = db
 
