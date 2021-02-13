@@ -11,7 +11,5 @@ services:
       - ./:/app
     command: bash -c 'while !</dev/tcp/postgres/5432; do sleep 1; done; go run main.go'
   postgres:
-    image: "postgres"
+    image: postgres
     env_file: .env
-    volumes:
-      - ./docker/db/docker-entrypoint-initdb.d/init.sql:/docker-entrypoint-initdb.d/init.sql

@@ -16,7 +16,7 @@ import (
 )
 
 func TestRegister(t *testing.T) {
-	t.Run("bad request if invalid email", func(t *testing.T) {
+	t.Run("fails if invalid email", func(t *testing.T) {
 		data := url.Values{}
 		data.Set("email", "test@invalid-email")
 		w, _ := doHTTPTest(data)
@@ -29,30 +29,46 @@ func TestRegister(t *testing.T) {
 		assert.Equal(t, body["error"], "Key: 'User.Email' Error:Field validation for 'Email' failed on the 'email' tag")
 	})
 
-	t.Run("ok with valid email", func(t *testing.T) {
+	t.Run("fails with weak password", func(t *testing.T) {
 		data := url.Values{}
-		data.Set("email", "test@valid-email.com")
+		data.Set("email", "test@weak-password.com")
 		data.Add("password", "test-pass-1234")
 		w, _ := doHTTPTest(data)
-		assert.Equal(t, 200, w.Code)
+		body := decodeJSONString(w.Body.String())
+		assert.Equal(t, 400, w.Code)
+		assert.Equal(t, "password not complex enough", body["error"])
 	})
 
-	t.Run("creates the user", func(t *testing.T) {
-		// generate a random email
-		rand.Seed(time.Now().UnixNano())
-		email := randSeq(10) + "@unique-email.com"
+	t.Run("ok with valid email and password", func(t *testing.T) {
+		email := randEmail()
 
 		// do request
 		data := url.Values{}
 		data.Set("email", email)
-		data.Add("password", "test-pass-1234")
+		data.Add("password", "test-Pass-1234")
 		w, d := doHTTPTest(data)
 
 		// find and assert equal
-		user := d.GetUserByEmail(email)
+		user, _ := d.GetUserByEmail(email)
 		body := decodeJSONString(w.Body.String())
 		respUser := body["user"].(map[string]interface{})
 		assert.Equal(t, user.Email, respUser["email"])
+	})
+
+	t.Run("fails when user exists", func(t *testing.T) {
+		// create a new user
+		email := randEmail()
+		data := url.Values{}
+		data.Set("email", email)
+		data.Add("password", "test-Pass-1234")
+
+		// do the request
+		doHTTPTest(data)
+		// resubmit
+		w, _ := doHTTPTest(data)
+		body := decodeJSONString(w.Body.String())
+		assert.Equal(t, 400, w.Code)
+		assert.Equal(t, "user "+email+" already exists", body["error"])
 	})
 }
 
@@ -93,4 +109,11 @@ func randSeq(n int) string {
 		b[i] = letters[rand.Intn(len(letters))]
 	}
 	return string(b)
+}
+
+func randEmail() string {
+	// generate a random email
+	rand.Seed(time.Now().UnixNano())
+	email := randSeq(10) + "@random.com"
+	return email
 }

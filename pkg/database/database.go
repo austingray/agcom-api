@@ -28,7 +28,7 @@ func Default() *Database {
 
 // Test returns a test Database object with a connection to the test database
 func Test() *Database {
-	database := "test"
+	database := "testdb"
 	db := connect(database)
 	d := postConnect(db)
 	return d
