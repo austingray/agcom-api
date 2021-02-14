@@ -18,8 +18,14 @@ func Register(c *gin.Context) {
 	email := c.PostForm("email")
 	password := c.PostForm("password")
 
+	// send registration email if client sets this value
+	sendEmail := false
+	if c.PostForm("sendEmail") != "" {
+		sendEmail = true
+	}
+
 	d := c.MustGet("d").(*database.Database)
-	user, err := d.CreateUser(email, password)
+	user, err := d.CreateUser(email, password, sendEmail)
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

@@ -70,6 +70,16 @@ func TestRegister(t *testing.T) {
 		assert.Equal(t, 400, w.Code)
 		assert.Equal(t, "user "+email+" already exists", body["error"])
 	})
+
+	t.Run("sends me a registration email when I ask for one", func(t *testing.T) {
+		// create a new user
+		data := url.Values{}
+		data.Set("email", "waustingray@gmail.com")
+		data.Add("password", "test-Pass-1234")
+		data.Add("sendEmail", "true")
+		w, _ := doHTTPTest(data)
+		assert.Equal(t, 200, w.Code)
+	})
 }
 
 func doHTTPTest(data url.Values) (*httptest.ResponseRecorder, *database.Database) {

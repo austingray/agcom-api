@@ -4,7 +4,9 @@ services:
     build: .
     ports:
       - "8080:8080"
-    env_file: .env
+    env_file:
+      - .env
+      - .smtp
     depends_on:
       - postgres
     volumes:

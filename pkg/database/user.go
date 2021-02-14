@@ -5,6 +5,7 @@ import (
 	"log"
 	"unicode"
 
+	"github.com/austingray/agcom-api/pkg/smtp"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -19,7 +20,7 @@ type User struct {
 }
 
 // CreateUser handles creation of user in database
-func (d *Database) CreateUser(email, password string) (User, error) {
+func (d *Database) CreateUser(email, password string, sendEmail bool) (User, error) {
 	// create the user and validate the email
 	user := User{Email: email}
 	err := validate.Struct(user)
@@ -58,6 +59,10 @@ func (d *Database) CreateUser(email, password string) (User, error) {
 		// TODO: error logging/handling
 		log.Println("Error: Could not create user in db.")
 		return user, dbc.Error
+	}
+
+	if sendEmail == true {
+		smtp.SendEmail(email, "registration")
 	}
 
 	// success
