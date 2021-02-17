@@ -19,7 +19,7 @@ func TestRegister(t *testing.T) {
 	t.Run("fails if invalid email", func(t *testing.T) {
 		data := url.Values{}
 		data.Set("email", "test@invalid-email")
-		w, _ := doHTTPTest(data)
+		w, _ := doRegisterReq(data)
 		body := decodeJSONString(w.Body.String())
 
 		// 400 response code
@@ -33,7 +33,7 @@ func TestRegister(t *testing.T) {
 		data := url.Values{}
 		data.Set("email", "test@weak-password.com")
 		data.Add("password", "test-pass-1234")
-		w, _ := doHTTPTest(data)
+		w, _ := doRegisterReq(data)
 		body := decodeJSONString(w.Body.String())
 		assert.Equal(t, 400, w.Code)
 		assert.Equal(t, "password not complex enough", body["error"])
@@ -46,7 +46,7 @@ func TestRegister(t *testing.T) {
 		data := url.Values{}
 		data.Set("email", email)
 		data.Add("password", "test-Pass-1234")
-		w, d := doHTTPTest(data)
+		w, d := doRegisterReq(data)
 
 		// find and assert equal
 		user, _ := d.GetUserByEmail(email)
@@ -63,9 +63,9 @@ func TestRegister(t *testing.T) {
 		data.Add("password", "test-Pass-1234")
 
 		// do the request
-		doHTTPTest(data)
+		doRegisterReq(data)
 		// resubmit
-		w, _ := doHTTPTest(data)
+		w, _ := doRegisterReq(data)
 		body := decodeJSONString(w.Body.String())
 		assert.Equal(t, 400, w.Code)
 		assert.Equal(t, "user "+email+" already exists", body["error"])
@@ -77,12 +77,43 @@ func TestRegister(t *testing.T) {
 		data.Set("email", "waustingray@gmail.com")
 		data.Add("password", "test-Pass-1234")
 		data.Add("sendEmail", "true")
-		w, _ := doHTTPTest(data)
+		w, _ := doRegisterReq(data)
 		assert.Equal(t, 200, w.Code)
 	})
 }
 
-func doHTTPTest(data url.Values) (*httptest.ResponseRecorder, *database.Database) {
+func TestLogin(t *testing.T) {
+	t.Run("unauthorized if invalid email", func(t *testing.T) {
+		data := url.Values{}
+		data.Set("email", "test@invalid-email")
+		w, _ := doLoginReq(data)
+		body := decodeJSONString(w.Body.String())
+		assert.Equal(t, 401, w.Code)
+		assert.Equal(t, "user not found", body["error"])
+	})
+
+	t.Run("unauthorized if incorrect password", func(t *testing.T) {
+		data := url.Values{}
+		data.Set("email", "waustingray@gmail.com")
+		data.Set("password", "test-pass-1234")
+		w, _ := doLoginReq(data)
+		body := decodeJSONString(w.Body.String())
+		assert.Equal(t, 401, w.Code)
+		assert.Equal(t, "incorrect password", body["error"])
+	})
+
+	t.Run("jwt if successful", func(t *testing.T) {
+		data := url.Values{}
+		data.Set("email", "waustingray@gmail.com")
+		data.Set("password", "test-Pass-1234")
+		w, _ := doLoginReq(data)
+		body := decodeJSONString(w.Body.String())
+		assert.Equal(t, 200, w.Code)
+		assert.NotNil(t, body["token"])
+	})
+}
+
+func setupTest() (*httptest.ResponseRecorder, *gin.Engine, *database.Database) {
 	w := httptest.NewRecorder()
 	r := gin.Default()
 	d := database.Test()
@@ -92,10 +123,22 @@ func doHTTPTest(data url.Values) (*httptest.ResponseRecorder, *database.Database
 		c.Next()
 	})
 
-	// register routes
-	r.POST("/api/v1/user/register", Register)
+	return w, r, d
+}
 
+func doRegisterReq(data url.Values) (*httptest.ResponseRecorder, *database.Database) {
+	w, r, d := setupTest()
+	r.POST("/api/v1/user/register", Register)
 	req, _ := http.NewRequest("POST", "/api/v1/user/register", strings.NewReader(data.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+	r.ServeHTTP(w, req)
+	return w, d
+}
+
+func doLoginReq(data url.Values) (*httptest.ResponseRecorder, *database.Database) {
+	w, r, d := setupTest()
+	r.POST("/api/v1/user/login", Login)
+	req, _ := http.NewRequest("POST", "/api/v1/user/login", strings.NewReader(data.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
 	r.ServeHTTP(w, req)
 	return w, d
